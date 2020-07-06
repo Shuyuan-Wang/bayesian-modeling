@@ -36,7 +36,7 @@ Prior set 1:
 
 Prior set 2:
 
-- sigma_f ~ HalfCauchyl(2)
+- sigma_f ~ HalfCauchy(2)
 
 - l ~ HalfCauchy(2)
 
