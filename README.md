@@ -20,3 +20,24 @@ I sample from it and obtain the predictive count of scallop in the given region 
 In this section, I fit linear regression parameters (i.e. coefficients) using Bayesian method. After using MCMC to simulate from posterior distribution of 
 parameters, I compute the predictions using the mean of simulated parameters. The model checking part comes as a justification of the linear regression model.
 Finally I compute the RMSE of the linear regression.
+
+## Posterior curve visualizatioin
+
+In this section, I try two sets of prior distribution over kernel parameters. By fixing one dimension (let's say latitude), I generate the predictive posterior distribution of log(tot.catch) across the range of the other dimension (let's say longitude). In this way, we could visualize how the Gaussian Process looks like.
+
+Prior set 1:
+
+- sigma_f ~ HalfNormal(1)
+
+- l ~ InverseGamma(5,5)
+
+- sigma_n ~ HalfNormal(1)
+
+
+Prior set 2:
+
+- sigma_f ~ HalfCauchyl(2)
+
+- l ~ HalfCauchy(2)
+
+- sigma_n ~ HalfNormal(1)
