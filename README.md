@@ -21,7 +21,7 @@ In this section, I fit linear regression parameters (i.e. coefficients) using Ba
 parameters, I compute the predictions using the mean of simulated parameters. The model checking part comes as a justification of the linear regression model.
 Finally I compute the RMSE of the linear regression.
 
-## Predective Posterior Curve Visualizatioin
+## Predective Posterior Curve Visualization
 
 In this section, I try two sets of prior distribution over kernel parameters. By fixing one dimension (let's say latitude), I generate the predictive posterior distribution of log(tot.catch) across the range of the other dimension (let's say longitude). In this way, we could visualize how the Gaussian Process looks like.
 
