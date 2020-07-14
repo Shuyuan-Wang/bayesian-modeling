@@ -10,19 +10,22 @@ from matplotlib import cm
 
 import pandas as pd
 import seaborn as sns
+
 sns.set()
 
 import pymc3 as pm
 
+"""generate training data"""
 np.random.seed(708)
 x = np.linspace(0.5, np.pi * 2, 30)
 # 0.5:amplitude of noise
 y = np.sin(x) + np.random.rand(30) * 0.5 - 0.25
 true_y = np.sin(x)
-# plt.xlim(0, np.pi * 2)
-# plt.scatter(x, y)
-# plt.plot(x, true_y, c='r')
-# plt.show()
+plt.figure(figsize=(4, 3))
+plt.xlim(0, np.pi * 2)
+plt.scatter(x, y, marker='+', c='r')
+plt.plot(x, true_y, 'b')
+plt.show()
 
 # pymc modeling
 with pm.Model() as model:
@@ -31,7 +34,7 @@ with pm.Model() as model:
     cov_func = amp ** 2 * pm.gp.cov.ExpQuad(1, ls)  # input_dim=1,ls=ls
     M = pm.gp.mean.Linear(coeffs=(y / x).mean())
     gp = pm.gp.Marginal(M, cov_func)
-    noise = pm.HalfCauchy("noise", 10)
+    noise = pm.HalfCauchy("noise", 2)
     gp.marginal_likelihood("f", X=x.reshape(-1, 1), y=y, noise=noise)
     trace = pm.sample(1000, chains=1)
 
@@ -44,7 +47,7 @@ sd = np.sqrt(var)
 
 # plot
 # draw plot
-fig = plt.figure(figsize=(5, 5))
+plt.figure(figsize=(4, 3))
 # plot mean and 2σ intervals
 plt.ylim(-2, 2)
 plt.xlim(0, np.pi * 2)
@@ -55,44 +58,47 @@ plt.fill_between(X_new.flatten(), mu - 2 * sd, mu + 2 * sd, color="r", alpha=0.5
 # plt true y
 plt.plot(x, true_y, "k", label="True y")
 # plot original data and true function
-plt.scatter(x, y, alpha=1, c="b", label="observed data")
-
+plt.scatter(x, y, alpha=1, c="b", label="observed data", marker='+')
 plt.title("predictive mean and 2σ interval")
-plt.legend()
+plt.legend(loc='best', fontsize=8)
 plt.show()
+plt.savefig('./plots/predictive_mean_2sigma.png')
 
 # generate new curves (with noise)
 with model:
-    y_pred = gp.conditional("y_pred",X_new,pred_noise=True)
-    sample_pred = pm.sample_posterior_predictive(trace,vars=[y_pred],samples=50)
+    y_pred = gp.conditional("y_pred", X_new, pred_noise=True)
+with model:
+    sample_pred = pm.sample_posterior_predictive(trace, vars=[y_pred], samples=20)
 
 # draw plot
-fig = plt.figure(figsize=(5,5));
-# plot mean and 2σ intervals
-plt.ylim(-2,2)
-plt.xlim(0,np.pi*2)
+fig = plt.figure(figsize=(4, 3));
+plt.ylim(-2, 2)
+plt.xlim(0, np.pi * 2)
 # plot generated curves
 for c in sample_pred['y_pred']:
-    plt.plot(X_new,c,"gray",alpha=0.1)
+    plt.plot(X_new, c, "gray", alpha=0.1)
 # plot original data and true function
-plt.scatter(x, y,alpha=1,c = "b", label="observed data")
+plt.scatter(x, y, alpha=1, c="b", label="observed data", marker='+')
 plt.title("predictive posterior distribution with noise")
-plt.legend()
+plt.legend(loc='best', fontsize=8)
+plt.savefig('./plots/new_curves_noisy.png')
+
 
 # generate new curve (without noise)
 with model:
-    y_pred_noise = gp.conditional("y_pred_noise",X_new,pred_noise=False)
-    sample_pred_noise = pm.sample_posterior_predictive(trace,vars=[y_pred_noise],samples=50)
+    y_pred_noise = gp.conditional("y_pred_noise", X_new, pred_noise=False)
+with model:
+    sample_pred_noise = pm.sample_posterior_predictive(trace, vars=[y_pred_noise], samples=20)
 
 # draw plot
-fig = plt.figure(figsize=(5,5));
-# plot mean and 2σ intervals
-plt.ylim(-2,2)
-plt.xlim(0,np.pi*2)
+fig = plt.figure(figsize=(4, 3));
+plt.ylim(-2, 2)
+plt.xlim(0, np.pi * 2)
 # plot generated curves
 for c in sample_pred_noise['y_pred_noise']:
-    plt.plot(X_new,c,"gray",alpha=0.1)
+    plt.plot(X_new, c, "gray", alpha=0.1)
 # plot original data and true function
-plt.scatter(x, y,alpha=1,c = "b", label="observed data")
-plt.title("predictive posterior w/o noise")
-plt.legend()
+plt.scatter(x, y, alpha=1, c="b", label="observed data", marker='+')
+plt.title("predictive posterior without noise")
+plt.legend(loc='best', fontsize=8)
+plt.savefig('./plots/new_curves_noise_free.png')
