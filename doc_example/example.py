@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 # DATA PREPARATION
 # set the seed
 np.random.seed(1)
-
 n = 100  # The number of data points
 X = np.linspace(0, 10, n)[:, None]  # The inputs to the GP, they must be arranged as a column vector
 
@@ -31,13 +30,15 @@ f_true = np.random.multivariate_normal(mean_func(X).eval(),
 y = f_true + σ_true * np.random.randn(n)
 
 # Plot the data and the unobserved latent function
-fig = plt.figure(figsize=(12, 5))
+fig = plt.figure(figsize=(4, 3))
 ax = fig.gca()
-ax.plot(X, f_true, "dodgerblue", lw=3, label="True f")
-ax.plot(X, y, 'ok', ms=3, alpha=0.5, label="Data")
+ax.plot(X, f_true, "dodgerblue", lw=1, label="True f")
+ax.plot(X, y, 'ok', ms=1, alpha=0.5, label="Data")
 ax.set_xlabel("X")
 ax.set_ylabel("The true f(x)")
-plt.legend()
+plt.legend(loc='best', fontsize=8)
+plt.tight_layout()
+plt.savefig("./plots/data_distribution/data_dist.png",dpi=600)
 
 # BAYESIAN MODELING
 with pm.Model() as model:
@@ -63,33 +64,38 @@ pd.DataFrame({"Parameter": ["ℓ", "η", "σ"],
 X_new = np.linspace(0, 20, 600)[:, None]
 
 # add the GP conditional to the model, given the new X values (without noise)
+# When pred_noise=False, the conditional method produces the predictive distribution
+# for the underlying function represented by the GP.
+# When pred_noise=True, the conditional method produces the predictive distribution for the GP plus noise
 with model:
-    f_pred = gp.conditional("f_pred", X_new)
+    f_pred = gp.conditional("f_pred", X_new, pred_noise=False)
     # To use the MAP values, you can just replace the trace with a length-1 list with `mp`
     pred_samples = pm.sample_posterior_predictive([mp], vars=[f_pred], samples=20)
 
 # plot the results
-fig = plt.figure(figsize=(12, 5))
+fig = plt.figure(figsize=(4, 3))
 ax = fig.gca()
 
-#1 plot the 2000 samples by iteration
+# 1 plot the 2000 samples by iteration
 for c in pred_samples['f_pred']:
-    plt.plot(X_new,c,"gray",alpha=0.1)
+    plt.plot(X_new, c, "gray", alpha=0.3, lw=1)
 
-#2 plot the 2000 samples by package function
+# 2 plot the 2000 samples by package function
 # plot the samples from the gp posterior with samples and shading
 # from pymc3.gp.util import plot_gp_dist
 # plot_gp_dist(ax, pred_samples["f_pred"], X_new)
 
 # plot the data and the true latent function
-plt.plot(X, f_true, "dodgerblue", lw=3, label="True f")
-plt.plot(X, y, 'ok', ms=3, alpha=0.5, label="Observed data")
+plt.plot(X, f_true, "dodgerblue", lw=1, label="True f")
+plt.plot(X, y, 'ok', ms=1, alpha=0.5, label="Observed data")
 
 # axis labels and title
 plt.xlabel("X")
 plt.ylim([-13, 13])
-plt.title("Posterior distribution over $f(x)$ at the observed values")
-plt.legend()
+plt.title("Posterior distribution over $f(x)$ at the observed values", fontsize='small')
+plt.legend(loc='best', fontsize=8)
+plt.tight_layout()
+plt.savefig("./plots/new_curves/posterior_over_f.png",dpi=600)
 
 # WITH NOISE
 with model:
@@ -97,29 +103,31 @@ with model:
 with model:
     y_samples = pm.sample_posterior_predictive([mp], vars=[y_pred], samples=15)
 
-fig = plt.figure(figsize=(12, 5))
+fig = plt.figure(figsize=(4, 3))
 ax = fig.gca()
 # posterior predictive distribution
 
-#1 plot by package function
+# 1 plot by package function
 # from pymc3.gp.util import plot_gp_dist
 # plot_gp_dist(ax, y_samples["y_pred"], X_new, plot_samples=False, palette="bone_r");
 
-#2 plot by iteration
+# 2 plot by iteration
 for c in y_samples['y_pred']:
-    plt.plot(X_new, c, "gray", alpha=0.1)
+    plt.plot(X_new, c, "gray", alpha=0.1, lw=1)
 
 # overlay a scatter of one draw of random points from the
 #   posterior predictive distribution
-plt.plot(X_new, y_samples["y_pred"][10, :].T, "co", ms=2, label="Predicted data")
+plt.plot(X_new, y_samples["y_pred"][10, :].T, "co", ms=1, label="Predicted data")
 
 # plot original data and true function
-plt.plot(X, y, 'ok', ms=3, alpha=1.0, label="observed data")
-plt.plot(X, f_true, "dodgerblue", lw=3, label="true f")
+plt.plot(X, y, 'ok', ms=1, alpha=1.0, label="observed data")
+plt.plot(X, f_true, "dodgerblue", lw=1, label="true f")
 plt.xlabel("x")
 plt.ylim([-13, 13])
-plt.title("posterior predictive distribution, y_*")
-plt.legend()
+plt.title("posterior predictive distribution, y_*", fontsize=8)
+plt.legend(loc='best', fontsize=8, prop = {'size':6})
+plt.tight_layout()
+plt.savefig("./plots/new_curves/posterior_over_y.png",dpi=600)
 
 ''' USING .PREDICT '''
 # predict without noise
@@ -127,7 +135,7 @@ mu, var = gp.predict(X_new, point=mp, diag=True, pred_noise=False)
 sd = np.sqrt(var)
 
 # draw plot
-fig = plt.figure(figsize=(12, 5))
+fig = plt.figure(figsize=(4, 3))
 ax = fig.gca()
 
 # plot mean and 2σ intervals
@@ -137,20 +145,23 @@ plt.plot(X_new, mu - 2 * sd, 'r', lw=1)
 plt.fill_between(X_new.flatten(), mu - 2 * sd, mu + 2 * sd, color="r", alpha=0.5)
 
 # plot original data and true function
-plt.plot(X, y, 'ok', ms=3, alpha=1.0, label="observed data")
-plt.plot(X, f_true, "dodgerblue", lw=3, label="true f")
+plt.plot(X, y, 'ok', ms=1, alpha=1.0, label="observed data")
+plt.plot(X, f_true, "dodgerblue", lw=1, label="true f")
 
 plt.xlabel("x")
 plt.ylim([-13, 13])
-plt.title("predictive mean and 2σ interval without noise")
-plt.legend()
+plt.title("predictive mean and 2σ interval without noise",fontsize=8)
+plt.legend(loc='best', fontsize=8, prop = {'size':6})
+plt.tight_layout()
+plt.savefig("./plots/mean_2sig_region/mean_2sig_region_noise_free.png",dpi=600)
+
 
 # predict with noise
 mu, var = gp.predict(X_new, point=mp, diag=True, pred_noise=True)
 sd = np.sqrt(var)
 
 # draw plot
-fig = plt.figure(figsize=(12, 5))
+fig = plt.figure(figsize=(4, 3))
 ax = fig.gca()
 
 # plot mean and 2σ intervals
@@ -160,10 +171,13 @@ plt.plot(X_new, mu - 2 * sd, 'r', lw=1)
 plt.fill_between(X_new.flatten(), mu - 2 * sd, mu + 2 * sd, color="r", alpha=0.5)
 
 # plot original data and true function
-plt.plot(X, y, 'ok', ms=3, alpha=1.0, label="observed data")
-plt.plot(X, f_true, "dodgerblue", lw=3, label="true f")
+plt.plot(X, y, 'ok', ms=1, alpha=1.0, label="observed data")
+plt.plot(X, f_true, "dodgerblue", lw=1, label="true f")
 
 plt.xlabel("x")
 plt.ylim([-13, 13])
-plt.title("predictive mean and 2σ interval with noise")
-plt.legend()
+plt.title("predictive mean and 2σ interval with noise",fontsize=8)
+plt.legend(loc='best', fontsize=8, prop = {'size':6})
+plt.tight_layout()
+plt.savefig("./plots/mean_2sig_region/mean_2sig_region_noisy.png",dpi=600)
+
