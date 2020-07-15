@@ -38,11 +38,11 @@ with pm.Model() as model:
     gp.marginal_likelihood("f", X=x.reshape(-1, 1), y=y, noise=noise)
     trace = pm.sample(1000, chains=1)
 
-map = pm.find_MAP(model=model)
+map_ = pm.find_MAP(model=model)
 X_new = np.linspace(0, np.pi * 2, 150).reshape(-1, 1)
 
 # .predict method: return the mean and variance given a particular point
-mu, var = gp.predict(X_new, point=map, diag=True, pred_noise=True)
+mu, var = gp.predict(X_new, point=map_, diag=True, pred_noise=True)
 sd = np.sqrt(var)
 
 # plot
@@ -86,16 +86,16 @@ plt.savefig('./plots/new_curves_noisy.png')
 
 # generate new curve (without noise)
 with model:
-    y_pred_noise = gp.conditional("y_pred_noise", X_new, pred_noise=False)
+    f_pred = gp.conditional("f_pred", X_new, pred_noise=False)
 with model:
-    sample_pred_noise = pm.sample_posterior_predictive(trace, vars=[y_pred_noise], samples=20)
+    sample_f_pred = pm.sample_posterior_predictive(trace, vars=[f_pred], samples=20)
 
 # draw plot
 fig = plt.figure(figsize=(4, 3));
 plt.ylim(-2, 2)
 plt.xlim(0, np.pi * 2)
 # plot generated curves
-for c in sample_pred_noise['y_pred_noise']:
+for c in sample_f_pred['f_pred']:
     plt.plot(X_new, c, "gray", alpha=0.1)
 # plot original data and true function
 plt.scatter(x, y, alpha=1, c="b", label="observed data", marker='+')
